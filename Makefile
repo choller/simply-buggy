@@ -1,6 +1,24 @@
 SOURCES=$(shell find . -name "*.cpp")
 TARGETS=$(SOURCES:%.cpp=%)
 
+REV=$(shell git rev-parse HEAD)
+PREFIX=$(shell pwd)/
+CXXFLAGS=-fsanitize=address -g
+
+define CONFIG_TEMPLATE
+[Main]
+platform = x86-64
+product = simple-crash-$@
+product_version = $(REV)
+os = linux
+
+[Metadata]
+pathPrefix = $(PREFIX)
+buildFlags = $(CXXFLAGS)
+endef
+
+export CONFIG_TEMPLATE
+
 .PHONY: all
 all: $(TARGETS)
 
@@ -10,7 +28,8 @@ coverage: CXXFLAGS += --coverage
 coverage: $(TARGETS)
 
 %: %.cpp
-	clang++ $(CXXFLAGS) -fsanitize=address -g -o $@ $<
+	clang++ $(CXXFLAGS) -o $@ $<
+	@echo "$$CONFIG_TEMPLATE" > $@.fuzzmanagerconf
 
 .PHONY: clean
 clean:
