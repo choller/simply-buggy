@@ -6,6 +6,7 @@
  *          bad and meaningless coding habits on purpose.
  */
 #include <cstring>
+#include <fstream>
 #include <iostream>
 
 void printFirst(char* data, size_t count) {
@@ -18,7 +19,16 @@ void printLast(char* data, size_t count) {
   std::cout << last << std::endl;
 }
 
-int validateAndPerformAction(char* action, char* data, size_t count) {
+int validateAndPerformAction(char* buffer, size_t size) {
+  if (size < 2) {
+    std::cerr << "Buffer is too short." << std::endl;
+    return 1;
+  }
+
+  uint8_t action = buffer[0];
+  uint8_t count = buffer[1];
+  char* data = buffer + 2;
+
   if (!count) {
     std::cerr << "count must be non-zero." << std::endl;
     return 1;
@@ -26,10 +36,10 @@ int validateAndPerformAction(char* action, char* data, size_t count) {
 
   // Forgot to check count vs. the length of data here, doh!
 
-  if (!strcmp(action, "first")) {
+  if (!action) {
     printFirst(data, count);
     return 0;
-  } else if (!strcmp(action, "last")) {
+  } else if (action == 1) {
     printLast(data, count);
     return 0;
   } else {
@@ -39,14 +49,36 @@ int validateAndPerformAction(char* action, char* data, size_t count) {
 }
 
 int main(int argc, char** argv) {
-  if (argc < 4) {
-    std::cerr << "Usage is: " << argv[0] << " <first|last> <data> <count>" << std::endl;
+  if (argc < 2) {
+    std::cerr << "Usage is: " << argv[0] << " <file>" << std::endl;
     exit(1);
   }
 
-  // Simulate data on the heap, as argc/argv have some special behavior with ASan
-  char* data = (char*)malloc(strlen(argv[2]) + 1);
-  strcpy(data, argv[2]);
+  std::ifstream input(argv[1], std::ifstream::binary);
+  if (!input) {
+    std::cerr << "Error opening file." << std::endl;
+    exit(1);
+  }
 
-  return validateAndPerformAction(argv[1], data, atol(argv[3]));
+  input.seekg(0, input.end);
+  int size = input.tellg();
+  input.seekg(0, input.beg);
+
+  if (size < 0) {
+    std::cerr << "Error seeking in file." << std::endl;
+    exit(1);
+  }
+
+  char* buffer = new char[size];
+  input.read(buffer, size);
+
+  if (!input) {
+    std::cerr << "Error while reading file." << std::endl;
+    exit(1);
+  }
+
+  int ret = validateAndPerformAction(buffer, size);
+
+  delete[] buffer;
+  return ret;
 }
