@@ -37,14 +37,14 @@ int validateAndPerformAction(char* buffer, size_t size) {
   // Forgot to check count vs. the length of data here, doh!
 
   if (!action) {
-    printFirst(data, count);
-    return 0;
-  } else if (action == 1) {
+    std::cerr << "Action can't be zero." << std::endl;
+    return 1;
+  } else if (action >= 128) {
     printLast(data, count);
     return 0;
   } else {
-    std::cerr << "Action must either be 'first' or 'last'." << std::endl;
-    return 1;
+    printFirst(data, count);
+    return 0;
   }
 }
 
